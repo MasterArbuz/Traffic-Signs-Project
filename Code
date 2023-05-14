@@ -1,0 +1,32 @@
+import gc, os, cv2, PIL, torch
+import torchvision as tv
+import torch.nn as nn
+import torchsummary as ts
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import matplotlib.pyplot as plt
+from imblearn.over_sampling import RandomOverSampler
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, classification_report
+
+
+labels_df = pd.read_csv('/content/drive/MyDrive/dataset/pro/labels.csv')
+labels_df
+
+
+x , y = [] , [] 
+data_dir = '/content/drive/MyDrive/dataset/pro/pls'
+for folder in range(43):
+    folder_path = os.path.join(data_dir,str(folder))
+    for i,img in enumerate(os.listdir(folder_path)):
+        img_path = os.path.join(folder_path,img)
+        img_tensor = tv.transforms.ToTensor()(PIL.Image.open(img_path))
+        x.append(img_tensor.tolist()) 
+        y.append(folder)
+    print('folder of label',folder,'images loaded. Number of samples :',i+1)
+x = np.array(x)
+y = np.array(y)
+
+
+np.unique(y,return_counts=True)
