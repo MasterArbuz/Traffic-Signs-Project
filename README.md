@@ -1,2 +1,2 @@
 # Traffic-Signs-Project
-Project
+כל הקוד נמצא באתר פה.
