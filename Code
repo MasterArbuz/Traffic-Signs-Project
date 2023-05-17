@@ -32,28 +32,30 @@ x = np.array(x)
 y = np.array(y)
 
 
-// 4.
+// 4. # הצגת כל התמונות והתיקיות בשורה כל אחת ובודק אם הנתונים מאוזנים או לא
 np.unique(y,return_counts=True)
 
-// 5.
+
+// 5. # מאזן את מערך הנתונים
 x = x.reshape(x.shape[0],3*32*32)
 x,y = RandomOverSampler().fit_resample(x,y)
 x = x.reshape(x.shape[0],3,32,32) # reshaped again as it was
 x.shape, y.shape
 
 
-// 6.
+// 6. # הצגת כל התמונות והתיקיות בשורה כל אחת ובודק אם הנתונים מאוזנים או לא
 np.unique(y,return_counts=True)
 
-// 7 .
-xtrain, xtest, ytrain, ytest = train_test_split(x,y,test_size=0.2,stratify=y)
+
+// 7. # מחלק את המערך הנתונים לאימון ולבדיקה
+xtrain, xtest, ytrain, ytest = train_test_split(x,y,test_size=0.2,stratify=y) # מחלק את המערך
 del x,y
-gc.collect()
+gc.collect() # מוחק את המשתנים על מנת לפנות מקום
 xtrain.shape, xtest.shape, ytrain.shape, ytest.shape
 
 
-// 8.
-plt.figure(figsize=(20,20)) 
+// 8. # הצגת 100 תמונות באמצעות matplotlib
+plt.figure(figsize=(20,20)) # יוצר רשת של 100 תמונות ומראה אותה
 plt.imshow(tv.utils.make_grid(torch.tensor(xtrain[:100]),nrow=10).permute(1,2,0))
 plt.axis('off')
 plt.show()
@@ -61,14 +63,14 @@ print('\n\nLabels of the above images :\n')
 ytrain[:100]
 
 
-// 9.
+// 9. # מהמיר נתונים ממערך נאמפי לטנזור למטרת חישובים נוספים
 xtrain = torch.from_numpy(xtrain) 
 ytrain = torch.from_numpy(ytrain)
 xtest = torch.from_numpy(xtest)
 ytest = torch.from_numpy(ytest)
 
 
-// 10.
+// 10. # אתחול מודל הרשת
 model = nn.Sequential(
                         # 1st convolutional network Layers
                         nn.Conv2d(3,16,(2,2),(1,1),'same'),   # Convolution
@@ -101,7 +103,7 @@ model = model.to(torch.device('cuda'),non_blocking=True)
 ts.summary(model,(3,32,32))
 
 
-// 11.
+// 11. # יוצר פונקציה בשביל התאמת המודל ודיוק בשביל לאמן את המודל
 def evaluate(model, data, target):
     data = data.to(torch.device('cuda'),non_blocking=True)
     target = target.to(torch.device('cuda'),non_blocking=True)
@@ -115,26 +117,26 @@ def evaluate(model, data, target):
     torch.cuda.empty_cache()
     
 
-// 12.
+// 12. # מעריך את המודל על נתוני הבדיקה לפני האימון
 print('\nInitial Loss and Accuracy on Test Dataset :')
 evaluate(model,xtest.float(),ytest)
 
 
-// 13.
+// 13. # מגדיר את פונקציית אימון המודל כדי לאמן אותו
 def train_model(model=model,optimizer=torch.optim.Adam,epochs=5,batch_size=200,steps_per_epochs=200,l2_reg=0,max_lr=0.01,grad_clip=0.5):
     
-    hist = [[],[],[],[]] 
+    hist = [[],[],[],[]] # ישמור על נתונים לכל צעד
     
-    train_ds = [(x,y) for x,y in zip(xtrain,ytrain)] 
-    training_dl = torch.utils.data.DataLoader(train_ds,batch_size=batch_size) 
-    train_dl = torch.utils.data.DataLoader(train_ds,batch_size=batch_size * steps_per_epochs) 
+    train_ds = [(x,y) for x,y in zip(xtrain,ytrain)] # מכין את נתוני האימון
+    training_dl = torch.utils.data.DataLoader(train_ds,batch_size=batch_size) # משומש בשביל אימון המודל
+    train_dl = torch.utils.data.DataLoader(train_ds,batch_size=batch_size * steps_per_epochs)  # מעלה בשביל כל צעד ופיתוח על נתוני האימון
 
     del train_ds 
-    gc.collect() 
+    gc.collect() # מוחק את הדברים המשומשים ומפנה מקום
     
-    optimizer = optimizer(model.parameters(),weight_decay=l2_reg)
+    optimizer = optimizer(model.parameters(),weight_decay=l2_reg) # מאתחל את האופטימיזר על מנת לעדכן את משקל והטיה של המודל
     
-    sched = torch.optim.lr_scheduler.OneCycleLR(optimizer,max_lr,epochs=epochs, steps_per_epoch=int(steps_per_epochs * 1.01))
+    sched = torch.optim.lr_scheduler.OneCycleLR(optimizer,max_lr,epochs=epochs, steps_per_epoch=int(steps_per_epochs * 1.01)) # מאתחל על מנת לעדכן את אימון הלמידה לכל סיבוב שלם
         
     for i in range(epochs):
                  
@@ -207,23 +209,23 @@ def train_model(model=model,optimizer=torch.optim.Adam,epochs=5,batch_size=200,s
     return pd.DataFrame(history)
     
 
-// 14.
+// 14. # אימון המודל
 %%time
 history = train_model(model,optimizer=torch.optim.Adam,epochs=25,steps_per_epochs=200,l2_reg=0,max_lr=0.015,grad_clip=0.5)
 
 
-// 15.
+// 15. # היסטורית המודל
 history
 
 
-// 16.
+// 16. # הצגת את היסטורית אימון המודל
 fig = px.line(history.iloc[:,:2],title='Loss Per Epochs',labels={'value':'Loss','index':'Epochs'})
 fig.update_layout(title={'font_family':'Georgia','font_size':23,'x':0.5}).show()
 fig = px.line(history.iloc[:,2:],title='Accuracy Per Epochs',labels={'value':'Accuracy','index':'Epochs'})
 fig.update_layout(title={'font_family':'Georgia','font_size':23,'x':0.5}).show() 
 
 
-// 17.
+// 17. # מציג דוח על נתוני הבדיקה
 xtest =  xtest.to(torch.device('cuda'),non_blocking=True)
 ypred = model(xtest.float()).argmax(axis=1)
 xtest = xtest.to(torch.device('cpu'),non_blocking=True)
@@ -231,7 +233,7 @@ ypred = ypred.to(torch.device('cpu'),non_blocking=True)
 print(classification_report(ytest,ypred))
 
 
-// 18.
+// 18. # הגדרת פונקציה התחזה איזה תמרור קיבל
 def prediction(img):
     if type(img) == str:
         img = tv.transforms.ToTensor()(PIL.Image.open(img))
